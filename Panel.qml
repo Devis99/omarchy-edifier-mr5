@@ -171,7 +171,7 @@ Panel {
     open: root.opened
     focusTarget: keyCatcher
     contentWidth: panel.fittedContentWidth(edifier.eqMode === 2 ? Style.space(360) : Style.space(340))
-    contentHeight: panel.fittedContentHeight(column.implicitHeight, Style.space(520))
+    contentHeight: panel.fittedContentHeight(column.implicitHeight, edifier.eqMode === 2 ? Style.space(660) : Style.space(520))
 
     PanelKeyCatcher {
       id: keyCatcher
@@ -325,7 +325,7 @@ Panel {
           headerRight: edifier.customEqName
 
           Row {
-            width: parent.width
+            Layout.fillWidth: true
             spacing: (parent.width - (edifier.customEqBands.length * 26)) / Math.max(1, edifier.customEqBands.length - 1)
 
             Repeater {
@@ -394,12 +394,12 @@ Panel {
             font.bold: true
           }
 
-          Column {
-            width: parent.width
+          ColumnLayout {
+            Layout.fillWidth: true
             spacing: Style.space(6)
 
             RowLayout {
-              width: parent.width
+              Layout.fillWidth: true
               spacing: Style.space(8)
 
               PanelTextField {
@@ -418,7 +418,7 @@ Panel {
             }
 
             RowLayout {
-              width: parent.width
+              Layout.fillWidth: true
               spacing: Style.space(8)
 
               PanelTextField {
