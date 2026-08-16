@@ -144,6 +144,26 @@ See `scripts/edifier_protocol.py` for the full command table and the custom
 EQ curve's byte layout (reverse-engineered and verified live against a real
 unit).
 
+## Uninstall
+
+```sh
+omarchy plugin remove devis99.edifier-mr5
+```
+
+This removes the plugin itself. The background daemon it spawns keeps running
+independently until it's killed and doesn't get cleaned up by the remove
+command, so stop it too:
+
+```sh
+pkill -f edifier_daemon.py
+```
+
+Optionally, remove its saved config (cached device address, EQ profiles):
+
+```sh
+rm -rf ~/.config/edifier-mr5 ~/.cache/edifier-mr5
+```
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
