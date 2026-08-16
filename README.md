@@ -56,6 +56,18 @@ Click the speaker icon in the bar. `r` refreshes, `s` opens/saves settings,
 a share-code exporter/importer live below the band sliders. Acoustic Tuning,
 firmware info, and connection controls live in Settings (`s`).
 
+### Starter presets
+
+Paste one of these into the "Share a preset" import box in Custom EQ mode
+(gains are on this speaker's 0–20 boost scale, `0` = no boost on that band):
+
+| Preset | Curve (62Hz → 16kHz) | Share code |
+| --- | --- | --- |
+| Flat | `0 0 0 0 0 0 0 0 0` | `MR5EQ1:eyJuIjogIkZsYXQiLCAiZyI6IFswLCAwLCAwLCAwLCAwLCAwLCAwLCAwLCAwXX0=` |
+| Bass Boost | `12 12 8 3 0 0 0 0 0` | `MR5EQ1:eyJuIjogIkJhc3MgQm9vc3QiLCAiZyI6IFsxMiwgMTIsIDgsIDMsIDAsIDAsIDAsIDAsIDBdfQ==` |
+| Vocal Boost | `0 0 0 2 7 9 6 2 0` | `MR5EQ1:eyJuIjogIlZvY2FsIEJvb3N0IiwgImciOiBbMCwgMCwgMCwgMiwgNywgOSwgNiwgMiwgMF19` |
+| Treble Boost | `0 0 0 0 0 3 7 12 14` | `MR5EQ1:eyJuIjogIlRyZWJsZSBCb29zdCIsICJnIjogWzAsIDAsIDAsIDAsIDAsIDMsIDcsIDEyLCAxNF19` |
+
 ## Compatibility
 
 Only tested against one MR5. That said, nothing in the code is tied to that
