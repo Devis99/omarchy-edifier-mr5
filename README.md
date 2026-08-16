@@ -41,8 +41,6 @@ with or endorsed by Edifier.
 omarchy plugin add https://github.com/Devis99/omarchy-edifier-mr5.git --enable
 ```
 
-(Or clone it manually into `~/.config/omarchy/plugins/devis99.edifier-mr5` and run `omarchy plugin enable devis99.edifier-mr5 --section right` — same result.)
-
 First connection does a one-time BLE scan for a device advertising manufacturer
 ID `0x07E0` (Edifier) or named "EDIFIER BLE"; the found address is cached in
 `~/.config/edifier-mr5/config.json` so future connects are instant. Put the

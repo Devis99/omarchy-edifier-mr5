@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "author": "andrasd",
   "license": "MIT",
-  "description": "Control an Edifier MR5 studio monitor over Bluetooth LE: volume, sound mode, and custom EQ, without the phone app. Protocol reverse-engineered from the Edifier ConneX Android app.",
+  "description": "Control an Edifier MR5 studio monitor over Bluetooth LE: volume, sound mode, custom EQ, and acoustic tuning, without the phone app. Protocol reverse-engineered from the Edifier ConneX Android app.",
   "kinds": [
     "bar-widget"
   ],
@@ -14,7 +14,7 @@
   },
   "barWidget": {
     "displayName": "Edifier MR5",
-    "description": "Volume, sound mode, and custom EQ for an Edifier MR5 speaker over BLE.",
+    "description": "Volume, sound mode, custom EQ, and acoustic tuning for an Edifier MR5 speaker over BLE.",
     "category": "System",
     "allowMultiple": false,
     "defaults": {
