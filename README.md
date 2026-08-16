@@ -7,9 +7,15 @@ from your [Omarchy](https://omarchy.org) bar — volume, sound mode, and the
 The protocol is unofficial: it was reverse-engineered from the Edifier
 ConneX Android app (decompiled + the app's own encrypted product/command
 catalog decrypted with a key found in the app itself). It is not affiliated
-with or endorsed by Edifier. It's known to work with the MR5; other Edifier
-"box" products using the same `lib_connect` protocol family may work too but
-haven't been tested.
+with or endorsed by Edifier.
+
+> [!WARNING]
+> **Tested on exactly one MR5.** This has only been run against the single
+> physical MR5 unit I own — it works well there, but I can't promise every
+> unit/firmware revision behaves identically. Other Edifier "box" products
+> using the same `lib_connect` protocol family may work too (see
+> [Compatibility](#compatibility)) but are untested. Use at your own risk;
+> issues and reports from other units/models are very welcome.
 
 ## Features
 
@@ -46,6 +52,25 @@ from that.
 Click the speaker icon in the bar. `r` refreshes, `s` opens/saves settings,
 `Esc` closes. In Custom mode, drag any band to adjust the curve; presets and
 a share-code exporter/importer live below the band sliders.
+
+## Compatibility
+
+Only tested against one MR5. That said, nothing in the code is tied to that
+specific unit — the GATT UUIDs, command protocol, and the 9-band EQ layout
+all come from Edifier's own model-level product catalog / the device's own
+firmware response, not anything unit-specific, and discovery scans by
+manufacturer ID + name rather than a hardcoded address. So in principle any
+MR5 should work the same way; it just hasn't been confirmed on a second unit
+yet.
+
+Beyond the MR5 itself: the overall protocol (packet framing, GATT pattern) is
+shared across Edifier's product line, so other Edifier speakers ("box"
+category) are plausible with moderate changes — mainly re-deriving the custom
+EQ band layout for that product, since this plugin only implements the
+9-band layout this MR5 happens to use (`eqIndex=12`; other products may use a
+different one, see `scripts/edifier_protocol.py`). Earbuds/headphones use a
+different packet header and an entirely different command set (ANC, wear
+detection, etc.) not covered here at all.
 
 ## Known limitations
 
