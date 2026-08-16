@@ -17,9 +17,7 @@ with or endorsed by Edifier.
 > [Compatibility](#compatibility)) but are untested. Use at your own risk;
 > issues and reports from other units/models are very welcome.
 
-![Main panel showing volume, sound mode, and the 9-band curve editor](screenshot.png)
-
-![Settings panel showing Acoustic Tuning: low cutoff frequency/slope, acoustic space, and desktop control](screenshot-settings.png)
+![Main panel (volume, sound mode, 9-band curve editor) next to the Settings panel (Acoustic Tuning: low cutoff frequency/slope, acoustic space, desktop control)](screenshots.png)
 
 ## Features
 
