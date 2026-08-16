@@ -24,7 +24,6 @@ Item {
   property string customEqName: ""
   property var eqProfiles: []
   property string eqShareCode: ""
-  property string latestKnownFirmware: ""
   property string lastError: ""
   property double lastUpdateMs: 0
   property bool busy: false
@@ -81,7 +80,6 @@ Item {
     if (data.custom_eq_name !== null && data.custom_eq_name !== undefined) customEqName = data.custom_eq_name
     if (data.eq_profiles !== null && data.eq_profiles !== undefined) eqProfiles = data.eq_profiles
     if (data.eq_share_code !== null && data.eq_share_code !== undefined && data.eq_share_code !== "") eqShareCode = data.eq_share_code
-    if (data.latest_known_firmware !== null && data.latest_known_firmware !== undefined) latestKnownFirmware = data.latest_known_firmware
     lastError = data.error || data.last_error || ""
     lastUpdateMs = Date.now()
   }

@@ -529,19 +529,6 @@ Panel {
               font.family: root.fontFamily
               font.pixelSize: Style.font.bodySmall
             }
-
-            Text {
-              width: parent.width
-              text: {
-                if (edifier.latestKnownFirmware === "" || edifier.firmwareVersion === "") return ""
-                return edifier.latestKnownFirmware === edifier.firmwareVersion
-                  ? "Up to date"
-                  : "Update available (update via ConneX app)"
-              }
-              color: root.dim
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.caption
-            }
           }
 
           SectionCard {

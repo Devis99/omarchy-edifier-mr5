@@ -26,7 +26,7 @@ with or endorsed by Edifier.
 - **Custom EQ** — the speaker's 9-band graphic EQ (62 Hz–16 kHz), drag to adjust
 - **Presets** — save/apply multiple custom curves locally (the speaker itself only holds one live curve; presets are pushed onto it on demand), plus a text share-code to hand a curve to someone else
 - **Acoustic Tuning** (in Settings) — the low-cutoff filter (frequency + slope) and acoustic-space room compensation from the app's "Acoustic Tuning" screen, plus the desktop-control switch
-- **Firmware version check** — informational only, see [Firmware updates](#firmware-updates) below
+- **Firmware version display** — shows your installed version, see [Firmware updates](#firmware-updates) below
 - A persistent background daemon holds the BLE connection open, so opening the panel is instant instead of reconnecting every time
 
 ## Requirements
@@ -100,15 +100,20 @@ detection, etc.) not covered here at all.
 
 ## Firmware updates
 
-This plugin shows your installed firmware version next to the latest version
-in Edifier's own product catalog, informational only. It does **not** flash
-firmware. The MR5's OTA update sequence was located in the decompiled app
-(`ota_ready` / `ota_start_master` / `ota_start_sub` commands) but the actual
-chunked-transfer handshake was not reverse-engineered, and there's no way to
-obtain the real firmware binary outside Edifier's own servers. Getting either
-of those wrong mid-flash risks bricking the speaker with no confirmed
-recovery path — a different risk class than a wrong volume/EQ byte, which is
-trivially harmless. Use the official ConneX app for firmware updates.
+This plugin shows your installed firmware version, informational only — it
+does **not** flash firmware and doesn't claim to know whether a newer one
+exists. An earlier version compared the installed version against a value
+pulled from Edifier's static product catalog and showed "Update available"
+if they differed, but that catalog value isn't a reliable live signal (it
+can be stale, region-gated, or simply not reflect what the ConneX app itself
+would offer you), so that comparison was removed. The MR5's OTA update
+sequence was located in the decompiled app (`ota_ready` / `ota_start_master`
+/ `ota_start_sub` commands) but the actual chunked-transfer handshake was
+not reverse-engineered, and there's no way to obtain the real firmware
+binary outside Edifier's own servers. Getting either of those wrong
+mid-flash risks bricking the speaker with no confirmed recovery path — a
+different risk class than a wrong volume/EQ byte, which is trivially
+harmless. Use the official ConneX app for firmware updates.
 
 ## How it works
 

@@ -37,12 +37,6 @@ from edifier_protocol import (
     parse_response,
 )
 
-# From Edifier's products_release.json (decrypted from the ConneX APK) at the
-# time this was written. Purely informational — we do not implement OTA
-# flashing (see set_custom_eq_name/docstrings below for why: no confirmed
-# firmware binary source or write-side OTA handshake has been verified).
-KNOWN_LATEST_FIRMWARE = "1.0.4"
-
 CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "edifier-mr5"
 CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "edifier-mr5"
 CONFIG_FILE = CONFIG_DIR / "config.json"
@@ -138,7 +132,6 @@ class EdifierDaemon:
             "custom_eq_name": "",
             "eq_profiles": sorted(load_eq_profiles().keys()),
             "eq_share_code": "",
-            "latest_known_firmware": KNOWN_LATEST_FIRMWARE,
             "last_raw": None,
             "last_error": "",
             "last_update_ts": 0,
