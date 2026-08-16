@@ -17,6 +17,8 @@ with or endorsed by Edifier.
 > [Compatibility](#compatibility)) but are untested. Use at your own risk;
 > issues and reports from other units/models are very welcome.
 
+![Custom EQ panel showing volume, sound mode, and the 9-band curve editor](screenshot.png)
+
 ## Features
 
 - **Volume** — live slider, synced with the physical knob and the ConneX app
