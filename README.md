@@ -29,8 +29,8 @@ haven't been tested.
 ## Install
 
 ```sh
-git clone https://github.com/<you>/omarchy-edifier-mr5 ~/.config/omarchy/plugins/local.edifier-mr5
-omarchy plugin enable local.edifier-mr5 --section right
+git clone https://github.com/Devis99/omarchy-edifier-mr5 ~/.config/omarchy/plugins/devis99.edifier-mr5
+omarchy plugin enable devis99.edifier-mr5 --section right
 ```
 
 First connection does a one-time BLE scan for a device advertising manufacturer

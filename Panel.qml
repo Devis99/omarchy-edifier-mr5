@@ -8,8 +8,8 @@ import qs.Ui
 
 Panel {
   id: root
-  moduleName: "local.edifier-mr5"
-  ipcTarget: "local.edifier-mr5"
+  moduleName: "devis99.edifier-mr5"
+  ipcTarget: "devis99.edifier-mr5"
   manageIpc: false
 
   readonly property color foreground: bar ? bar.foreground : Color.foreground
