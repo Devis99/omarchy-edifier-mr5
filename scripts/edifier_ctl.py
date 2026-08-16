@@ -74,7 +74,7 @@ def send(cmd: dict, timeout=20.0) -> dict:
 
 def main():
     if len(sys.argv) < 2:
-        print(json.dumps({"ok": False, "error": "usage: edifier_ctl.py <status|set-volume N|set-eq N|set-input N|reconnect|hard-reconnect|rescan>"}))
+        print(json.dumps({"ok": False, "error": "usage: edifier_ctl.py <status|set-volume N|set-eq N|reconnect|hard-reconnect|rescan>"}))
         return
 
     action = sys.argv[1]
@@ -93,8 +93,6 @@ def main():
             else:
                 payload[key] = int(value)
         result = send(payload)
-    elif action == "set-input" and len(sys.argv) == 3:
-        result = send({"cmd": "set_input", "value": int(sys.argv[2])})
     elif action == "set-custom-eq-band" and len(sys.argv) == 4:
         result = send({"cmd": "set_custom_eq_band", "band": int(sys.argv[2]), "gain": int(sys.argv[3])})
     elif action == "set-custom-eq-name" and len(sys.argv) == 3:

@@ -239,26 +239,16 @@ Panel {
             }
           }
 
-          Button {
+          PanelButton {
             visible: root.settingsMode
             text: "Back"
-            foreground: root.foreground
-            fontFamily: root.fontFamily
-            fontSize: Style.font.caption
-            horizontalPadding: Style.spacing.controlPaddingX
-            verticalPadding: Style.spacing.controlPaddingY
             onClicked: root.closeSettings()
           }
 
-          Button {
+          PanelButton {
             visible: root.settingsMode
             text: "Save"
             active: true
-            foreground: root.foreground
-            fontFamily: root.fontFamily
-            fontSize: Style.font.caption
-            horizontalPadding: Style.spacing.controlPaddingX
-            verticalPadding: Style.spacing.controlPaddingY
             onClicked: root.saveSettings()
           }
 
@@ -313,43 +303,17 @@ Panel {
             width: parent.width
             spacing: Style.space(8)
 
-            Button {
-              Layout.fillWidth: true
-              text: "Monitor"
-              foreground: root.foreground
-              fontFamily: root.fontFamily
-              fontSize: Style.font.caption
-              horizontalPadding: Style.spacing.controlPaddingX
-              verticalPadding: Style.spacing.controlPaddingY
-              active: edifier.eqMode === 0
-              enabled: edifier.connected
-              onClicked: edifier.setEq(0)
-            }
-
-            Button {
-              Layout.fillWidth: true
-              text: "Music"
-              foreground: root.foreground
-              fontFamily: root.fontFamily
-              fontSize: Style.font.caption
-              horizontalPadding: Style.spacing.controlPaddingX
-              verticalPadding: Style.spacing.controlPaddingY
-              active: edifier.eqMode === 1
-              enabled: edifier.connected
-              onClicked: edifier.setEq(1)
-            }
-
-            Button {
-              Layout.fillWidth: true
-              text: "Custom"
-              foreground: root.foreground
-              fontFamily: root.fontFamily
-              fontSize: Style.font.caption
-              horizontalPadding: Style.spacing.controlPaddingX
-              verticalPadding: Style.spacing.controlPaddingY
-              active: edifier.eqMode === 2
-              enabled: edifier.connected
-              onClicked: edifier.setEq(2)
+            Repeater {
+              model: ["Monitor", "Music", "Custom"]
+              PanelButton {
+                required property string modelData
+                required property int index
+                Layout.fillWidth: true
+                text: modelData
+                active: edifier.eqMode === index
+                enabled: edifier.connected
+                onClicked: edifier.setEq(index)
+              }
             }
           }
         }
@@ -406,23 +370,16 @@ Panel {
             width: parent.width
             spacing: Style.space(8)
 
-            TextField {
+            PanelTextField {
               id: eqNameField
               Layout.fillWidth: true
-              foreground: root.foreground
-              accent: Color.accent
               placeholderText: "Preset name"
               text: edifier.customEqName
               onAccepted: { edifier.setCustomEqName(text); edifier.saveEqProfile(text) }
             }
 
-            Button {
+            PanelButton {
               text: "Save as preset"
-              foreground: root.foreground
-              fontFamily: root.fontFamily
-              fontSize: Style.font.caption
-              horizontalPadding: Style.spacing.controlPaddingX
-              verticalPadding: Style.spacing.controlPaddingY
               enabled: edifier.connected
               onClicked: { edifier.setCustomEqName(eqNameField.text); edifier.saveEqProfile(eqNameField.text) }
             }
@@ -445,23 +402,16 @@ Panel {
               width: parent.width
               spacing: Style.space(8)
 
-              TextField {
+              PanelTextField {
                 Layout.fillWidth: true
-                foreground: root.foreground
-                accent: Color.accent
                 readOnly: true
                 selectByMouse: true
                 text: edifier.eqShareCode
                 placeholderText: "Export a preset to get a code"
               }
 
-              Button {
+              PanelButton {
                 text: "Export"
-                foreground: root.foreground
-                fontFamily: root.fontFamily
-                fontSize: Style.font.caption
-                horizontalPadding: Style.spacing.controlPaddingX
-                verticalPadding: Style.spacing.controlPaddingY
                 enabled: edifier.customEqName !== ""
                 onClicked: edifier.exportEqProfile(edifier.customEqName)
               }
@@ -471,22 +421,15 @@ Panel {
               width: parent.width
               spacing: Style.space(8)
 
-              TextField {
+              PanelTextField {
                 id: importField
                 Layout.fillWidth: true
-                foreground: root.foreground
-                accent: Color.accent
                 placeholderText: "Paste a share code"
                 onAccepted: edifier.importEqProfile(text)
               }
 
-              Button {
+              PanelButton {
                 text: "Import"
-                foreground: root.foreground
-                fontFamily: root.fontFamily
-                fontSize: Style.font.caption
-                horizontalPadding: Style.spacing.controlPaddingX
-                verticalPadding: Style.spacing.controlPaddingY
                 onClicked: edifier.importEqProfile(importField.text)
               }
             }
@@ -494,15 +437,6 @@ Panel {
         }
 
         // ---------- Footer ----------
-        Text {
-          visible: !root.settingsMode && edifier.firmwareVersion !== ""
-          width: parent.width
-          text: "Firmware " + edifier.firmwareVersion + (edifier.mac !== "" ? "  ·  " + edifier.mac : "")
-          color: root.dim
-          font.family: root.fontFamily
-          font.pixelSize: Style.font.caption
-        }
-
         Text {
           visible: edifier.lastError !== ""
           width: parent.width
@@ -589,16 +523,11 @@ Panel {
 
               Repeater {
                 model: ["-6", "-12", "-18", "-24"]
-                Button {
+                PanelButton {
                   required property string modelData
                   required property int index
                   Layout.fillWidth: true
                   text: modelData
-                  foreground: root.foreground
-                  fontFamily: root.fontFamily
-                  fontSize: Style.font.caption
-                  horizontalPadding: Style.spacing.controlPaddingX
-                  verticalPadding: Style.spacing.controlPaddingY
                   bordered: true
                   active: edifier.lowCutoffSlope === index
                   enabled: edifier.connected
@@ -624,16 +553,11 @@ Panel {
 
               Repeater {
                 model: ["0", "-1", "-2", "-3", "-4"]
-                Button {
+                PanelButton {
                   required property string modelData
                   required property int index
                   Layout.fillWidth: true
                   text: modelData
-                  foreground: root.foreground
-                  fontFamily: root.fontFamily
-                  fontSize: Style.font.caption
-                  horizontalPadding: Style.spacing.controlPaddingX
-                  verticalPadding: Style.spacing.controlPaddingY
                   bordered: true
                   active: edifier.acousticSpace === index
                   enabled: edifier.connected
@@ -652,14 +576,9 @@ Panel {
               font.pixelSize: Style.font.bodySmall
             }
 
-            Button {
+            PanelButton {
               Layout.fillWidth: true
               text: edifier.desktopControl ? "Turn Off" : "Turn On"
-              foreground: root.foreground
-              fontFamily: root.fontFamily
-              fontSize: Style.font.caption
-              horizontalPadding: Style.spacing.controlPaddingX
-              verticalPadding: Style.spacing.controlPaddingY
               bordered: true
               enabled: edifier.connected
               onClicked: edifier.setAcousticTuning({ desktop: !edifier.desktopControl })
@@ -669,40 +588,25 @@ Panel {
           SectionCard {
             title: "Connection"
 
-            Button {
+            PanelButton {
               Layout.fillWidth: true
               text: "Reconnect"
-              foreground: root.foreground
-              fontFamily: root.fontFamily
-              fontSize: Style.font.caption
-              horizontalPadding: Style.spacing.controlPaddingX
-              verticalPadding: Style.spacing.controlPaddingY
               bordered: true
               onClicked: edifier.reconnect()
             }
 
-            Button {
+            PanelButton {
               Layout.fillWidth: true
               text: "Rescan"
               tooltipText: "Forget the saved address and scan for the speaker again"
-              foreground: root.foreground
-              fontFamily: root.fontFamily
-              fontSize: Style.font.caption
-              horizontalPadding: Style.spacing.controlPaddingX
-              verticalPadding: Style.spacing.controlPaddingY
               bordered: true
               onClicked: edifier.rescan()
             }
 
-            Button {
+            PanelButton {
               Layout.fillWidth: true
               text: "Hard reconnect"
               tooltipText: "Power-cycles the Bluetooth adapter — briefly disrupts other Bluetooth devices"
-              foreground: root.foreground
-              fontFamily: root.fontFamily
-              fontSize: Style.font.caption
-              horizontalPadding: Style.spacing.controlPaddingX
-              verticalPadding: Style.spacing.controlPaddingY
               bordered: true
               onClicked: edifier.hardReconnect()
             }
@@ -766,6 +670,19 @@ Panel {
         root.deleteTargetProfile = ""
       }
     }
+  }
+
+  component PanelButton: Button {
+    foreground: root.foreground
+    fontFamily: root.fontFamily
+    fontSize: Style.font.caption
+    horizontalPadding: Style.spacing.controlPaddingX
+    verticalPadding: Style.spacing.controlPaddingY
+  }
+
+  component PanelTextField: TextField {
+    foreground: root.foreground
+    accent: Color.accent
   }
 
   component SectionCard: BorderSurface {

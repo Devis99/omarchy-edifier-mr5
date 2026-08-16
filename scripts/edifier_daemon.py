@@ -44,7 +44,6 @@ EQ_PROFILES_FILE = CONFIG_DIR / "eq_profiles.json"
 LOG_FILE = CACHE_DIR / "daemon.log"
 SOCKET_PATH = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "edifier-mr5.sock"
 
-DEFAULT_INPUT_INDEX = 4  # observed byte0 of input_source_query on this unit
 RECONNECT_DELAYS = [2, 4, 8, 15, 30]
 
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -113,16 +112,12 @@ class EdifierDaemon:
     def __init__(self):
         self.client: BleakClient | None = None
         self.address: str | None = load_config().get("address")
-        self.input_index = DEFAULT_INPUT_INDEX
         self.state = {
             "connected": False,
             "address": self.address,
-            "mac": None,
             "firmware_version": None,
             "volume_max": None,
             "volume": None,
-            "input_index": None,
-            "input_value": None,
             "eq_mode": None,
             "low_cutoff_freq": None,
             "low_cutoff_slope": None,
@@ -172,15 +167,9 @@ class EdifierDaemon:
         log.info("notify idx=%s payload=%s", idx, payload.hex())
         if idx == CMD["version_query"] and len(payload) >= 1:
             self.state["firmware_version"] = ".".join(str(b) for b in payload)
-        elif idx == CMD["mac_query"] and len(payload) >= 6:
-            self.state["mac"] = ":".join(f"{b:02x}" for b in payload)
         elif idx == CMD["device_volume_query"] and len(payload) >= 2:
             self.state["volume_max"] = payload[0]
             self.state["volume"] = payload[1]
-        elif idx == CMD["input_source_query"] and len(payload) >= 2:
-            self.state["input_index"] = payload[0]
-            self.state["input_value"] = payload[1]
-            self.input_index = payload[0]
         elif idx == CMD["eq_query"] and len(payload) >= 1:
             self.state["eq_mode"] = payload[0]
             tuning = parse_acoustic_tuning(payload)
@@ -282,7 +271,7 @@ class EdifierDaemon:
                 return False
 
     async def _query_all(self):
-        for name in ("version_query", "mac_query", "device_volume_query", "input_source_query", "eq_query", "custom_eq_query"):
+        for name in ("version_query", "device_volume_query", "eq_query", "custom_eq_query"):
             await self._send(name)
             await asyncio.sleep(0.15)
 
@@ -404,13 +393,6 @@ class EdifierDaemon:
             await asyncio.sleep(0.25)
         await self.set_custom_eq_name(name)
 
-    async def set_input(self, value: int):
-        idx = self.input_index if self.input_index is not None else DEFAULT_INPUT_INDEX
-        await self._send("input_source_set", bytes([idx, int(value) & 0xFF]))
-        await asyncio.sleep(0.3)
-        await self._send("input_source_query")
-        await asyncio.sleep(0.3)
-
     # ---------- socket server ----------
 
     async def handle_client(self, reader, writer):
@@ -433,8 +415,6 @@ class EdifierDaemon:
                     acoustic_space=req.get("acoustic_space"),
                     desktop_control=req.get("desktop_control"),
                 )
-            elif cmd == "set_input":
-                await self.set_input(req.get("value", 0))
             elif cmd == "set_custom_eq_band":
                 await self.set_custom_eq_band(req.get("band", 0), req.get("gain", 0))
             elif cmd == "set_custom_eq_name":

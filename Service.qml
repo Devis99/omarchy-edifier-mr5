@@ -9,12 +9,9 @@ Item {
 
   property bool connected: false
   property string address: ""
-  property string mac: ""
   property string firmwareVersion: ""
   property int volumeMax: 30
   property int volume: 0
-  property int inputIndex: -1
-  property int inputValue: -1
   property int eqMode: -1
   property int lowCutoffFreq: -1
   property int lowCutoffSlope: -1
@@ -56,7 +53,6 @@ Item {
     connected = !!data.connected
     if (connected) everConnected = true
     address = data.address || ""
-    mac = data.mac || ""
     firmwareVersion = data.firmware_version || ""
     if (data.volume_max !== null && data.volume_max !== undefined) volumeMax = data.volume_max
     // A status poll can be in flight when the user starts dragging; skip
@@ -65,8 +61,6 @@ Item {
     // responses always apply immediately (recentLocalSet re-arms below).
     var recentLocalSet = (Date.now() - _lastVolumeSetMs) < 800
     if (data.volume !== null && data.volume !== undefined && !recentLocalSet) volume = data.volume
-    if (data.input_index !== null && data.input_index !== undefined) inputIndex = data.input_index
-    if (data.input_value !== null && data.input_value !== undefined) inputValue = data.input_value
     if (data.eq_mode !== null && data.eq_mode !== undefined) eqMode = data.eq_mode
     var recentTuningSet = (Date.now() - _lastTuningSetMs) < 800
     if (!recentTuningSet) {
@@ -92,7 +86,12 @@ Item {
   property var _queue: []
 
   function _coalesceKey(args) {
-    return args.length > 0 ? args[0] : ""
+    if (args.length === 0) return ""
+    // set-custom-eq-band needs the band index in the key too, otherwise
+    // dragging band A then quickly starting a drag on band B while A's set
+    // is still queued would coalesce them and silently drop A's update.
+    if (args[0] === "set-custom-eq-band" && args.length > 1) return args[0] + ":" + args[1]
+    return args[0]
   }
 
   function _enqueue(args) {
