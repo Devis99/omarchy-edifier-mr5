@@ -17,7 +17,9 @@ with or endorsed by Edifier.
 > [Compatibility](#compatibility)) but are untested. Use at your own risk;
 > issues and reports from other units/models are very welcome.
 
-![Custom EQ panel showing volume, sound mode, and the 9-band curve editor](screenshot.png)
+![Main panel showing volume, sound mode, and the 9-band curve editor](screenshot.png)
+
+![Settings panel showing Acoustic Tuning: low cutoff frequency/slope, acoustic space, and desktop control](screenshot-settings.png)
 
 ## Features
 
@@ -25,6 +27,7 @@ with or endorsed by Edifier.
 - **Sound Mode** — Monitor / Music / Custom, matching the speaker's own LED colors (red / green / white)
 - **Custom EQ** — the speaker's 9-band graphic EQ (62 Hz–16 kHz), drag to adjust
 - **Presets** — save/apply multiple custom curves locally (the speaker itself only holds one live curve; presets are pushed onto it on demand), plus a text share-code to hand a curve to someone else
+- **Acoustic Tuning** (in Settings) — the low-cutoff filter (frequency + slope) and acoustic-space room compensation from the app's "Acoustic Tuning" screen, plus the desktop-control switch
 - **Firmware version check** — informational only, see [Firmware updates](#firmware-updates) below
 - A persistent background daemon holds the BLE connection open, so opening the panel is instant instead of reconnecting every time
 
@@ -54,7 +57,8 @@ from that.
 
 Click the speaker icon in the bar. `r` refreshes, `s` opens/saves settings,
 `Esc` closes. In Custom mode, drag any band to adjust the curve; presets and
-a share-code exporter/importer live below the band sliders.
+a share-code exporter/importer live below the band sliders. Acoustic Tuning,
+firmware info, and connection controls live in Settings (`s`).
 
 ## Compatibility
 

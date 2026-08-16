@@ -545,6 +545,141 @@ Panel {
           }
 
           SectionCard {
+            title: "Acoustic Tuning"
+            headerRight: edifier.lowCutoffFreq >= 0 ? (edifier.lowCutoffFreq + "Hz") : "—"
+
+            Text {
+              width: parent.width
+              text: "Low cutoff: " + (edifier.lowCutoffFreq >= 0 ? edifier.lowCutoffFreq + "Hz" : "—")
+              color: root.foreground
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.bodySmall
+            }
+
+            // Wrapped so an overlay can swallow wheel events without
+            // affecting drag/click — otherwise scrolling the settings list
+            // while the cursor happens to pass over this slider nudges its
+            // value instead of just scrolling the page.
+            Item {
+              Layout.fillWidth: true
+              height: freqSlider.implicitHeight
+
+              PanelSlider {
+                id: freqSlider
+                bar: root.bar
+                anchors.fill: parent
+                minimum: 20
+                maximum: 100
+                step: 5
+                integer: true
+                value: edifier.lowCutoffFreq >= 0 ? edifier.lowCutoffFreq : 20
+                enabled: edifier.connected
+
+                onMoved: function(v) { edifier.setAcousticTuning({ freq: Math.round(v / 5) * 5 }) }
+              }
+
+              MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                onWheel: function(wheel) { wheel.accepted = false }
+              }
+            }
+
+            PanelSeparator { Layout.fillWidth: true; foreground: root.foreground }
+
+            Text {
+              width: parent.width
+              text: "Slope: " + (edifier.lowCutoffSlope >= 0 && edifier.lowCutoffSlope < 4
+                ? (-[6, 12, 18, 24][edifier.lowCutoffSlope]) + "dB/octave" : "—")
+              color: root.foreground
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.bodySmall
+            }
+
+            RowLayout {
+              width: parent.width
+              spacing: Style.space(6)
+
+              Repeater {
+                model: ["-6", "-12", "-18", "-24"]
+                Button {
+                  required property string modelData
+                  required property int index
+                  Layout.fillWidth: true
+                  text: modelData
+                  foreground: root.foreground
+                  fontFamily: root.fontFamily
+                  fontSize: Style.font.caption
+                  horizontalPadding: Style.spacing.controlPaddingX
+                  verticalPadding: Style.spacing.controlPaddingY
+                  bordered: true
+                  active: edifier.lowCutoffSlope === index
+                  enabled: edifier.connected
+                  onClicked: edifier.setAcousticTuning({ slope: index })
+                }
+              }
+            }
+
+            PanelSeparator { Layout.fillWidth: true; foreground: root.foreground }
+
+            Text {
+              width: parent.width
+              text: "Acoustic space: " + (edifier.acousticSpace >= 0
+                ? (edifier.acousticSpace === 0 ? "0dB" : ("-" + edifier.acousticSpace + "dB")) : "—")
+              color: root.foreground
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.bodySmall
+            }
+
+            RowLayout {
+              width: parent.width
+              spacing: Style.space(6)
+
+              Repeater {
+                model: ["0", "-1", "-2", "-3", "-4"]
+                Button {
+                  required property string modelData
+                  required property int index
+                  Layout.fillWidth: true
+                  text: modelData
+                  foreground: root.foreground
+                  fontFamily: root.fontFamily
+                  fontSize: Style.font.caption
+                  horizontalPadding: Style.spacing.controlPaddingX
+                  verticalPadding: Style.spacing.controlPaddingY
+                  bordered: true
+                  active: edifier.acousticSpace === index
+                  enabled: edifier.connected
+                  onClicked: edifier.setAcousticTuning({ space: index })
+                }
+              }
+            }
+
+            PanelSeparator { Layout.fillWidth: true; foreground: root.foreground }
+
+            Text {
+              width: parent.width
+              text: "Desktop Control: " + (edifier.desktopControl ? "On" : "Off")
+              color: root.foreground
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.bodySmall
+            }
+
+            Button {
+              Layout.fillWidth: true
+              text: edifier.desktopControl ? "Turn Off" : "Turn On"
+              foreground: root.foreground
+              fontFamily: root.fontFamily
+              fontSize: Style.font.caption
+              horizontalPadding: Style.spacing.controlPaddingX
+              verticalPadding: Style.spacing.controlPaddingY
+              bordered: true
+              enabled: edifier.connected
+              onClicked: edifier.setAcousticTuning({ desktop: !edifier.desktopControl })
+            }
+          }
+
+          SectionCard {
             title: "Connection"
 
             Button {
@@ -555,6 +690,7 @@ Panel {
               fontSize: Style.font.caption
               horizontalPadding: Style.spacing.controlPaddingX
               verticalPadding: Style.spacing.controlPaddingY
+              bordered: true
               onClicked: edifier.reconnect()
             }
 
@@ -567,6 +703,7 @@ Panel {
               fontSize: Style.font.caption
               horizontalPadding: Style.spacing.controlPaddingX
               verticalPadding: Style.spacing.controlPaddingY
+              bordered: true
               onClicked: edifier.rescan()
             }
 
@@ -579,6 +716,7 @@ Panel {
               fontSize: Style.font.caption
               horizontalPadding: Style.spacing.controlPaddingX
               verticalPadding: Style.spacing.controlPaddingY
+              bordered: true
               onClicked: edifier.hardReconnect()
             }
           }

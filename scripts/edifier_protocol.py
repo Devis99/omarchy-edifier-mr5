@@ -42,6 +42,44 @@ CMD = {
 # gain @ +4, 4 bytes/band)][4-byte timestamp][UTF-8 preset name]).
 CUSTOM_EQ_BAND_FREQS = [62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
 
+# "Acoustic Tuning" (eq_query/eq_set, 213/196) — this is the app's low-cutoff
+# filter + room-compensation screen, distinct from the sound-mode byte and
+# distinct from the 9-band custom EQ curve above. Verified live: a real
+# ConneX-set value of 30Hz / -24dB/oct / -2dB / Desktop ON decoded as exactly
+# `02 02 00 1e 03 02 01`.
+ACOUSTIC_TUNING_SLOPES_DB = [-6, -12, -18, -24]  # lowCutoffSlope is an index into this
+ACOUSTIC_SPACE_MIN_DB = -4
+ACOUSTIC_SPACE_MAX_DB = 0
+LOW_CUTOFF_FREQ_MIN = 20
+LOW_CUTOFF_FREQ_MAX = 100
+LOW_CUTOFF_FREQ_STEP = 5
+
+
+def parse_acoustic_tuning(payload: bytes):
+    """Decode an eq_query (213) response's EqCalibrationBean tail (bytes 1-6):
+    [mode][index][byte0][lowCutoffFreq][lowCutoffSlope][acousticSpace][desktopControl].
+    mode (byte 0) is handled separately by the caller (it's the Monitor/Music/
+    Custom sound mode, always present even with no calibration tail)."""
+    if len(payload) < 7:
+        return None
+    return {
+        "mode": payload[0],
+        "index": payload[1],
+        "byte0": payload[2],
+        "low_cutoff_freq": payload[3],
+        "low_cutoff_slope": payload[4],
+        "acoustic_space": payload[5],
+        "desktop_control": bool(payload[6] == 1),
+    }
+
+
+def build_eq_set(mode: int, index: int, byte0: int, low_cutoff_freq: int, low_cutoff_slope: int,
+                  acoustic_space: int, desktop_control: bool) -> bytes:
+    return bytes([
+        mode & 0xFF, index & 0xFF, byte0 & 0xFF, low_cutoff_freq & 0xFF,
+        low_cutoff_slope & 0xFF, acoustic_space & 0xFF, 1 if desktop_control else 0,
+    ])
+
 
 def build_command(command_index: int, payload: bytes = b"") -> bytes:
     length = len(payload)

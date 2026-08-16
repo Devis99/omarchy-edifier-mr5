@@ -84,6 +84,15 @@ def main():
         result = send({"cmd": "set_volume", "value": int(sys.argv[2])})
     elif action == "set-eq" and len(sys.argv) == 3:
         result = send({"cmd": "set_eq", "mode": int(sys.argv[2])})
+    elif action == "set-acoustic-tuning":
+        payload = {"cmd": "set_acoustic_tuning"}
+        for arg in sys.argv[2:]:
+            key, _, value = arg.partition("=")
+            if key == "desktop_control":
+                payload[key] = value in ("1", "true", "True")
+            else:
+                payload[key] = int(value)
+        result = send(payload)
     elif action == "set-input" and len(sys.argv) == 3:
         result = send({"cmd": "set_input", "value": int(sys.argv[2])})
     elif action == "set-custom-eq-band" and len(sys.argv) == 4:

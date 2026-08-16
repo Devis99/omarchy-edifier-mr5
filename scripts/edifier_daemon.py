@@ -31,6 +31,8 @@ from edifier_protocol import (
     build_command,
     build_custom_eq_band_set,
     build_custom_eq_name_set,
+    build_eq_set,
+    parse_acoustic_tuning,
     parse_custom_eq,
     parse_response,
 )
@@ -104,6 +106,10 @@ class EdifierDaemon:
             "input_index": None,
             "input_value": None,
             "eq_mode": None,
+            "low_cutoff_freq": None,
+            "low_cutoff_slope": None,
+            "acoustic_space": None,
+            "desktop_control": None,
             "custom_eq_bands": None,
             "custom_eq_name": "",
             "eq_profiles": sorted(load_eq_profiles().keys()),
@@ -115,6 +121,8 @@ class EdifierDaemon:
         }
         self._custom_eq_byte0 = 0
         self._custom_eq_date_bytes = b"\x00\x00\x00\x00"
+        self._eq_index = 2
+        self._eq_byte0 = 0
         self._connect_task = None
         self._stop = asyncio.Event()
         self._write_lock = asyncio.Lock()
@@ -158,6 +166,14 @@ class EdifierDaemon:
             self.input_index = payload[0]
         elif idx == CMD["eq_query"] and len(payload) >= 1:
             self.state["eq_mode"] = payload[0]
+            tuning = parse_acoustic_tuning(payload)
+            if tuning:
+                self._eq_index = tuning["index"]
+                self._eq_byte0 = tuning["byte0"]
+                self.state["low_cutoff_freq"] = tuning["low_cutoff_freq"]
+                self.state["low_cutoff_slope"] = tuning["low_cutoff_slope"]
+                self.state["acoustic_space"] = tuning["acoustic_space"]
+                self.state["desktop_control"] = tuning["desktop_control"]
         elif idx == CMD["custom_eq_query"]:
             parsed_eq = parse_custom_eq(payload)
             if parsed_eq:
@@ -258,7 +274,30 @@ class EdifierDaemon:
         await asyncio.sleep(0.3)
 
     async def set_eq(self, mode: int):
-        await self._send("eq_set", bytes([int(mode) & 0xFF]))
+        # Include the last-known acoustic-tuning tail so switching sound mode
+        # doesn't clear/reset it (mode + tuning share one struct on the wire).
+        if self.state.get("low_cutoff_freq") is not None:
+            payload = build_eq_set(
+                mode, self._eq_index, self._eq_byte0,
+                self.state["low_cutoff_freq"], self.state["low_cutoff_slope"],
+                self.state["acoustic_space"], bool(self.state["desktop_control"]),
+            )
+        else:
+            payload = bytes([int(mode) & 0xFF])
+        await self._send("eq_set", payload)
+        await asyncio.sleep(0.3)
+        await self._send("eq_query")
+        await asyncio.sleep(0.3)
+
+    async def set_acoustic_tuning(self, low_cutoff_freq=None, low_cutoff_slope=None,
+                                   acoustic_space=None, desktop_control=None):
+        mode = self.state.get("eq_mode") or 0
+        freq = low_cutoff_freq if low_cutoff_freq is not None else (self.state.get("low_cutoff_freq") or 20)
+        slope = low_cutoff_slope if low_cutoff_slope is not None else (self.state.get("low_cutoff_slope") or 0)
+        space = acoustic_space if acoustic_space is not None else (self.state.get("acoustic_space") or 0)
+        desktop = desktop_control if desktop_control is not None else bool(self.state.get("desktop_control"))
+        payload = build_eq_set(mode, self._eq_index, self._eq_byte0, freq, slope, space, desktop)
+        await self._send("eq_set", payload)
         await asyncio.sleep(0.3)
         await self._send("eq_query")
         await asyncio.sleep(0.3)
@@ -367,6 +406,13 @@ class EdifierDaemon:
                 await self.set_volume(req.get("value", 0))
             elif cmd == "set_eq":
                 await self.set_eq(req.get("mode", 0))
+            elif cmd == "set_acoustic_tuning":
+                await self.set_acoustic_tuning(
+                    low_cutoff_freq=req.get("low_cutoff_freq"),
+                    low_cutoff_slope=req.get("low_cutoff_slope"),
+                    acoustic_space=req.get("acoustic_space"),
+                    desktop_control=req.get("desktop_control"),
+                )
             elif cmd == "set_input":
                 await self.set_input(req.get("value", 0))
             elif cmd == "set_custom_eq_band":

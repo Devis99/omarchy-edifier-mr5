@@ -16,6 +16,10 @@ Item {
   property int inputIndex: -1
   property int inputValue: -1
   property int eqMode: -1
+  property int lowCutoffFreq: -1
+  property int lowCutoffSlope: -1
+  property int acousticSpace: -1
+  property bool desktopControl: false
   property var customEqBands: []
   property string customEqName: ""
   property var eqProfiles: []
@@ -65,6 +69,13 @@ Item {
     if (data.input_index !== null && data.input_index !== undefined) inputIndex = data.input_index
     if (data.input_value !== null && data.input_value !== undefined) inputValue = data.input_value
     if (data.eq_mode !== null && data.eq_mode !== undefined) eqMode = data.eq_mode
+    var recentTuningSet = (Date.now() - _lastTuningSetMs) < 800
+    if (!recentTuningSet) {
+      if (data.low_cutoff_freq !== null && data.low_cutoff_freq !== undefined) lowCutoffFreq = data.low_cutoff_freq
+      if (data.low_cutoff_slope !== null && data.low_cutoff_slope !== undefined) lowCutoffSlope = data.low_cutoff_slope
+      if (data.acoustic_space !== null && data.acoustic_space !== undefined) acousticSpace = data.acoustic_space
+      if (data.desktop_control !== null && data.desktop_control !== undefined) desktopControl = data.desktop_control
+    }
     var recentEqSet = (Date.now() - _lastCustomEqSetMs) < 800
     if (data.custom_eq_bands !== null && data.custom_eq_bands !== undefined && !recentEqSet) customEqBands = data.custom_eq_bands
     if (data.custom_eq_name !== null && data.custom_eq_name !== undefined) customEqName = data.custom_eq_name
@@ -117,6 +128,7 @@ Item {
 
   property double _lastVolumeSetMs: 0
   property double _lastCustomEqSetMs: 0
+  property double _lastTuningSetMs: 0
 
   function setVolume(value) {
     var v = Math.max(0, Math.min(volumeMax > 0 ? volumeMax : 100, Math.round(value)))
@@ -128,6 +140,26 @@ Item {
   function setEq(mode) {
     eqMode = mode
     runCommand(["set-eq", String(mode)])
+  }
+
+  function setAcousticTuning(fields) {
+    // fields: partial object, any of {freq, slope, space, desktop}. Always
+    // sends the full current snapshot (not just the changed field) so that
+    // if two field-changes coalesce in the queue, the surviving one is still
+    // complete and correct rather than silently dropping the other field's
+    // change.
+    if (fields.freq !== undefined) lowCutoffFreq = fields.freq
+    if (fields.slope !== undefined) lowCutoffSlope = fields.slope
+    if (fields.space !== undefined) acousticSpace = fields.space
+    if (fields.desktop !== undefined) desktopControl = fields.desktop
+    _lastTuningSetMs = Date.now()
+    runCommand([
+      "set-acoustic-tuning",
+      "low_cutoff_freq=" + lowCutoffFreq,
+      "low_cutoff_slope=" + lowCutoffSlope,
+      "acoustic_space=" + acousticSpace,
+      "desktop_control=" + (desktopControl ? "1" : "0"),
+    ])
   }
 
   function setCustomEqBand(bandIndex, gain) {
