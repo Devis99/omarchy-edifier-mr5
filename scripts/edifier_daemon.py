@@ -91,6 +91,30 @@ def save_eq_profiles(profiles):
     EQ_PROFILES_FILE.write_text(json.dumps(profiles))
 
 
+async def bluetooth_powered() -> bool:
+    """Best-effort check of the adapter's power state via bluetoothctl, so a
+    powered-off adapter can be reported as a plain "Bluetooth is off" instead
+    of the raw BlueZ/D-Bus exception text (e.g. "org.bluez.Error.NotReady:
+    No such object", or a NoneType/DBus error with no useful detail) that
+    bubbles up from a failed scan/connect attempt in that state."""
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "bluetoothctl", "show",
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
+        )
+        out, _ = await asyncio.wait_for(proc.communicate(), timeout=5.0)
+        return "Powered: no" not in out.decode(errors="ignore")
+    except Exception:
+        return True  # can't tell either way, don't block a real attempt on it
+
+
+def friendly_connect_error(e: Exception) -> str:
+    lowered = str(e).lower()
+    if "notready" in lowered or "not ready" in lowered or "no default controller" in lowered:
+        return "Bluetooth is off"
+    return str(e)
+
+
 class EdifierDaemon:
     def __init__(self):
         self.client: BleakClient | None = None
@@ -191,11 +215,14 @@ class EdifierDaemon:
         self.state["last_update_ts"] = time.time()
 
     async def connect_once(self) -> bool:
-        if not self.address:
-            if not await self.discover():
-                self.state["last_error"] = "device not found (scan)"
-                return False
+        if not await bluetooth_powered():
+            self.state["last_error"] = "Bluetooth is off"
+            return False
         try:
+            if not self.address:
+                if not await self.discover():
+                    self.state["last_error"] = "device not found (scan)"
+                    return False
             client = BleakClient(self.address, disconnected_callback=lambda c: asyncio.create_task(self._disconnected_cb(c)))
             await asyncio.wait_for(client.connect(), timeout=15.0)
             await client.start_notify(READ_UUID, self._on_notify)
@@ -208,7 +235,7 @@ class EdifierDaemon:
             return True
         except Exception as e:
             log.warning("connect failed: %s", e)
-            self.state["last_error"] = str(e)
+            self.state["last_error"] = friendly_connect_error(e)
             self.client = None
             return False
 
@@ -258,7 +285,7 @@ class EdifierDaemon:
                 return True
             except Exception as e:
                 log.warning("write failed (%s): %s", name, e)
-                self.state["last_error"] = str(e)
+                self.state["last_error"] = friendly_connect_error(e)
                 return False
 
     async def _query_all(self):
