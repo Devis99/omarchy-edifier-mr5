@@ -725,6 +725,7 @@ Panel {
         Text {
           visible: section.headerRight !== ""
           text: section.headerRight
+          textFormat: Text.PlainText
           color: root.dim
           font.family: root.fontFamily
           font.pixelSize: 10

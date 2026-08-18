@@ -46,8 +46,14 @@ SOCKET_PATH = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "edifier-mr5.soc
 
 RECONNECT_DELAYS = [2, 4, 8, 15, 30]
 
+os.umask(0o077)  # config/cache/socket contain only a BLE MAC + EQ names, but keep them owner-only
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+CACHE_DIR.chmod(0o700)
+CONFIG_DIR.chmod(0o700)
+for _f in (CONFIG_DIR / "config.json", CONFIG_DIR / "eq_profiles.json"):
+    if _f.exists():
+        _f.chmod(0o600)  # repair perms on files left world-readable by older plugin versions
 
 logging.basicConfig(
     filename=LOG_FILE,
@@ -440,19 +446,6 @@ class EdifierDaemon:
                 await self.connect_once()
             elif cmd == "hard_reconnect":
                 await self.hard_reconnect()
-            elif cmd == "raw":
-                idx = int(req.get("index"))
-                payload = bytes.fromhex(req.get("payload_hex", ""))
-                name = None
-                for k, v in CMD.items():
-                    if v == idx:
-                        name = k
-                        break
-                pkt = build_command(idx, payload)
-                async with self._write_lock:
-                    if self.client and self.state["connected"]:
-                        await self.client.write_gatt_char(WRITE_UUID, pkt, response=False)
-                await asyncio.sleep(1.0)
             elif cmd == "rescan":
                 self.address = None
                 await self.discover()
