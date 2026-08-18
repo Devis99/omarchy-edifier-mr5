@@ -12,6 +12,8 @@ import sys
 import time
 from pathlib import Path
 
+os.umask(0o077)  # daemon.spawn.log may capture bluetoothctl output; keep it owner-only
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 SOCKET_PATH = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "edifier-mr5.sock"
 CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "edifier-mr5"
@@ -32,7 +34,10 @@ def daemon_alive() -> bool:
 
 def spawn_daemon():
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    CACHE_DIR.chmod(0o700)
     log_path = CACHE_DIR / "daemon.spawn.log"
+    if log_path.exists():
+        log_path.chmod(0o600)  # repair perms left by older plugin versions
     with open(log_path, "a") as log_f:
         subprocess.Popen(
             [sys.executable, str(SCRIPT_DIR / "edifier_daemon.py")],

@@ -97,6 +97,11 @@ detection, etc.) not covered here at all.
   its value mapping (which byte = XLR/RCA/AUX/Bluetooth) wasn't reliably
   pinned down; it's not exposed in the UI.
 - **Firmware updates are not flashable from here, by design** — see below.
+- **No BLE pairing/bonding is used** (this matches Edifier's own protocol,
+  not a choice made here). Discovery matches on advertised manufacturer ID
+  or device name only, with no authentication — a malicious device
+  broadcasting the same identifiers could in principle be connected to
+  instead of your real speaker.
 
 ## Firmware updates
 

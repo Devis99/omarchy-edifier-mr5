@@ -51,7 +51,7 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 CACHE_DIR.chmod(0o700)
 CONFIG_DIR.chmod(0o700)
-for _f in (CONFIG_DIR / "config.json", CONFIG_DIR / "eq_profiles.json"):
+for _f in (CONFIG_FILE, EQ_PROFILES_FILE, LOG_FILE, CACHE_DIR / "daemon.lock"):
     if _f.exists():
         _f.chmod(0o600)  # repair perms on files left world-readable by older plugin versions
 
@@ -253,10 +253,16 @@ class EdifierDaemon:
                 pass
         self.client = None
         self.state["connected"] = False
-        proc = await asyncio.create_subprocess_exec("bluetoothctl", "power", "off")
+        proc = await asyncio.create_subprocess_exec(
+            "bluetoothctl", "power", "off",
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+        )
         await proc.wait()
         await asyncio.sleep(2)
-        proc = await asyncio.create_subprocess_exec("bluetoothctl", "power", "on")
+        proc = await asyncio.create_subprocess_exec(
+            "bluetoothctl", "power", "on",
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+        )
         await proc.wait()
         await asyncio.sleep(2)
         return await self.connect_once()
@@ -471,9 +477,13 @@ class EdifierDaemon:
             writer.close()
 
     async def run(self):
-        if SOCKET_PATH.exists():
-            SOCKET_PATH.unlink()
-        server = await asyncio.start_unix_server(self.handle_client, path=str(SOCKET_PATH))
+        try:
+            if SOCKET_PATH.exists():
+                SOCKET_PATH.unlink()
+            server = await asyncio.start_unix_server(self.handle_client, path=str(SOCKET_PATH))
+        except OSError as e:
+            log.error("could not bind control socket at %s: %s", SOCKET_PATH, e)
+            return
         log.info("daemon listening on %s", SOCKET_PATH)
 
         loop = asyncio.get_event_loop()
