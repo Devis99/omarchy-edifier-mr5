@@ -95,7 +95,7 @@ def parse_custom_eq(payload: bytes):
     Only the eqIndex=12 / 9-band layout (this product's) is handled."""
     if len(payload) < 2 or payload[0] != 12:
         return None
-    band_count = payload[1]
+    band_count = min(payload[1], 9)
     total_len = 37
     bytes_per_band = 4
     arr = payload[2:2 + total_len]
