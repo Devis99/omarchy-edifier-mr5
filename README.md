@@ -4,36 +4,31 @@ Control an [Edifier MR5](https://edifier.com) studio monitor over Bluetooth LE
 from your [Omarchy](https://omarchy.org) bar — volume, sound mode, and the
 9-band custom EQ curve — without the phone app.
 
-The protocol is unofficial: it was reverse-engineered from the Edifier
-ConneX Android app (decompiled + the app's own encrypted product/command
-catalog decrypted with a key found in the app itself). It is not affiliated
-with or endorsed by Edifier.
+The protocol is unofficial, reverse-engineered from the Edifier ConneX
+Android app. Not affiliated with or endorsed by Edifier.
 
 > [!WARNING]
-> **Tested on exactly one MR5.** This has only been run against the single
-> physical MR5 unit I own — it works well there, but I can't promise every
-> unit/firmware revision behaves identically. Other Edifier "box" products
-> using the same `lib_connect` protocol family may work too (see
-> [Compatibility](#compatibility)) but are untested. Use at your own risk;
-> issues and reports from other units/models are very welcome.
+> **Tested on exactly one MR5.** Works well there; other units/firmware may
+> differ. Other Edifier "box" products sharing the `lib_connect` protocol may
+> work too (see [Compatibility](#compatibility)) but are untested.
 
 ![Main panel (volume, sound mode, 9-band curve editor) next to the Settings panel (Acoustic Tuning: low cutoff frequency/slope, acoustic space, desktop control)](screenshots.png)
 
 ## Features
 
 - **Volume** — live slider, synced with the physical knob and the ConneX app
-- **Sound Mode** — Monitor / Music / Custom, matching the speaker's own LED colors (red / green / white)
+- **Sound Mode** — Monitor / Music / Custom, matching the speaker's LED colors
 - **Custom EQ** — the speaker's 9-band graphic EQ (62 Hz–16 kHz), drag to adjust
-- **Presets** — save/apply multiple custom curves locally (the speaker itself only holds one live curve; presets are pushed onto it on demand), plus a text share-code to hand a curve to someone else
-- **Acoustic Tuning** (in Settings) — the low-cutoff filter (frequency + slope) and acoustic-space room compensation from the app's "Acoustic Tuning" screen, plus the desktop-control switch
-- **Firmware version display** — shows your installed version, see [Firmware updates](#firmware-updates) below
-- A persistent background daemon holds the BLE connection open, so opening the panel is instant instead of reconnecting every time
+- **Presets** — save/apply curves locally, plus a share-code to hand one to someone else
+- **Acoustic Tuning** (Settings) — low-cutoff filter, room compensation, desktop-control switch
+- **Firmware version display** — informational only, see [Firmware updates](#firmware-updates)
+- A persistent background daemon keeps the BLE connection open, so the panel opens instantly
 
 ## Requirements
 
-- An Omarchy system running the Quickshell-based Omarchy shell
-- `python-bleak` (BLE library): `sudo pacman -S python-bleak`
-- `bluetoothd` (BlueZ) running, as usual on Omarchy
+- Omarchy running the Quickshell-based shell
+- `python-bleak`: `sudo pacman -S python-bleak`
+- `bluetoothd` (BlueZ) running
 
 ## Install
 
@@ -41,137 +36,58 @@ with or endorsed by Edifier.
 omarchy plugin add https://github.com/Devis99/omarchy-edifier-mr5.git --enable
 ```
 
-First connection does a one-time BLE scan for a device advertising manufacturer
-ID `0x07E0` (Edifier) or named "EDIFIER BLE"; the found address is cached in
-`~/.config/edifier-mr5/config.json` so future connects are instant. Put the
-speaker in Bluetooth pairing mode (button on the back) for the first scan if
-it isn't found — you do not need to pair it with your phone or this machine
-via the normal OS Bluetooth pairing flow, the BLE control channel is separate
-from that.
+First connection scans for a device advertising manufacturer ID `0x07E0`
+(Edifier) or named "EDIFIER BLE"; the address is then cached in
+`~/.config/edifier-mr5/config.json`. Put the speaker in pairing mode (button
+on the back) for that first scan — no normal OS Bluetooth pairing needed.
 
 ## Usage
 
 Click the speaker icon in the bar. `r` refreshes, `s` opens/saves settings,
-`Esc` closes. In Custom mode, drag any band to adjust the curve; presets and
-a share-code exporter/importer live below the band sliders. Acoustic Tuning,
-firmware info, and connection controls live in Settings (`s`).
-
-### Starter presets
-
-Paste one of these into the "Share a preset" import box in Custom EQ mode
-(gains are on this speaker's 0–20 boost scale, `0` = no boost on that band):
-
-| Preset | Curve (62Hz → 16kHz) | Share code |
-| --- | --- | --- |
-| Flat | `0 0 0 0 0 0 0 0 0` | `MR5EQ1:eyJuIjogIkZsYXQiLCAiZyI6IFswLCAwLCAwLCAwLCAwLCAwLCAwLCAwLCAwXX0=` |
-| Bass Boost | `12 12 8 3 0 0 0 0 0` | `MR5EQ1:eyJuIjogIkJhc3MgQm9vc3QiLCAiZyI6IFsxMiwgMTIsIDgsIDMsIDAsIDAsIDAsIDAsIDBdfQ==` |
-| Vocal Boost | `0 0 0 2 7 9 6 2 0` | `MR5EQ1:eyJuIjogIlZvY2FsIEJvb3N0IiwgImciOiBbMCwgMCwgMCwgMiwgNywgOSwgNiwgMiwgMF19` |
-| Treble Boost | `0 0 0 0 0 3 7 12 14` | `MR5EQ1:eyJuIjogIlRyZWJsZSBCb29zdCIsICJnIjogWzAsIDAsIDAsIDAsIDAsIDMsIDcsIDEyLCAxNF19` |
+`Esc` closes. Drag any band in Custom mode to adjust the curve; presets and
+the share-code exporter/importer sit below the sliders.
 
 ## Compatibility
 
-Only tested against one MR5. That said, nothing in the code is tied to that
-specific unit — the GATT UUIDs, command protocol, and the 9-band EQ layout
-all come from Edifier's own model-level product catalog / the device's own
-firmware response, not anything unit-specific, and discovery scans by
-manufacturer ID + name rather than a hardcoded address. So in principle any
-MR5 should work the same way; it just hasn't been confirmed on a second unit
-yet.
-
-Beyond the MR5 itself: the overall protocol (packet framing, GATT pattern) is
-shared across Edifier's product line, so other Edifier speakers ("box"
-category) are plausible with moderate changes — mainly re-deriving the custom
-EQ band layout for that product, since this plugin only implements the
-9-band layout this MR5 happens to use (`eqIndex=12`; other products may use a
-different one, see `scripts/edifier_protocol.py`). Earbuds/headphones use a
-different packet header and an entirely different command set (ANC, wear
-detection, etc.) not covered here at all.
+Only confirmed on one MR5, but nothing in the code is unit-specific — GATT
+UUIDs, command protocol, and EQ layout come from Edifier's product-level
+catalog, and discovery matches by manufacturer ID/name, not a hardcoded
+address. Other Edifier "box" speakers likely work with moderate changes
+(mainly re-deriving the EQ band layout, see `scripts/edifier_protocol.py`).
+Earbuds/headphones use a different protocol entirely and aren't covered.
 
 ## Known limitations
 
-- **BLE reconnects can be flaky.** If the daemon can't reconnect after a
-  disconnect, the "Hard reconnect" button in Settings power-cycles the
-  Bluetooth adapter, which reliably fixes it (but briefly disrupts any other
-  Bluetooth devices on the machine).
-- **Input source switching isn't implemented.** The wire command exists but
-  its value mapping (which byte = XLR/RCA/AUX/Bluetooth) wasn't reliably
-  pinned down; it's not exposed in the UI.
+- **BLE reconnects can be flaky** — "Hard reconnect" in Settings power-cycles
+  the Bluetooth adapter to fix it (briefly disrupts other BT devices).
+- **Input source switching isn't implemented** — value mapping wasn't reliably pinned down.
 - **Firmware updates are not flashable from here, by design** — see below.
-- **No BLE pairing/bonding is used** (this matches Edifier's own protocol,
-  not a choice made here). Discovery matches on advertised manufacturer ID
-  or device name only, with no authentication — a malicious device
-  broadcasting the same identifiers could in principle be connected to
-  instead of your real speaker.
+- **No BLE pairing/bonding** (matches Edifier's own protocol) — a spoofed
+  device advertising the same identifiers could in principle connect instead
+  of your real speaker.
 
 ## Firmware updates
 
-This plugin shows your installed firmware version, informational only — it
-does **not** flash firmware and doesn't claim to know whether a newer one
-exists. An earlier version compared the installed version against a value
-pulled from Edifier's static product catalog and showed "Update available"
-if they differed, but that catalog value isn't a reliable live signal (it
-can be stale, region-gated, or simply not reflect what the ConneX app itself
-would offer you), so that comparison was removed. The MR5's OTA update
-sequence was located in the decompiled app (`ota_ready` / `ota_start_master`
-/ `ota_start_sub` commands) but the actual chunked-transfer handshake was
-not reverse-engineered, and there's no way to obtain the real firmware
-binary outside Edifier's own servers. Getting either of those wrong
-mid-flash risks bricking the speaker with no confirmed recovery path — a
-different risk class than a wrong volume/EQ byte, which is trivially
-harmless. Use the official ConneX app for firmware updates.
+Shows your installed version only — does **not** flash firmware. The OTA
+handshake was located in the decompiled app but not fully reverse-engineered,
+and getting it wrong risks bricking the speaker with no confirmed recovery
+path. Use the official ConneX app for firmware updates.
 
 ## How it works
 
-```
-Panel.qml / Service.qml   — Omarchy shell bar widget (Quickshell/QML)
-        │  spawns, one JSON command per call
-        ▼
-scripts/edifier_ctl.py    — thin CLI, talks to the daemon over a Unix socket
-        │
-        ▼
-scripts/edifier_daemon.py — persistent process, holds the one BLE connection,
-                             serializes all reads/writes, auto-reconnects
-        │  bleak (BLE)
-        ▼
-scripts/edifier_protocol.py — packet framing + the reverse-engineered command set
-```
+Panel.qml (bar widget) → `edifier_ctl.py` (CLI, Unix socket) →
+`edifier_daemon.py` (holds the one BLE connection, auto-reconnects) →
+`edifier_protocol.py` (packet framing + reverse-engineered command set).
 
-The daemon exists because reconnecting fresh on every command turned out to
-be unreliable for this speaker's BLE peripheral (BlueZ needed a power-cycle
-to recover after repeated reconnects); one long-lived connection avoids that.
-
-### Protocol summary
-
-Packets: `[0xAA][appCode][commandIndex][lenHi][lenLo][payload...][checksum]`,
-checksum = sum of all preceding bytes mod 256, written to GATT characteristic
-`48090002-1a48-11e9-ab14-d663bd873d93` on service
-`48093a01-1a48-11e9-ab14-d663bd873d93`; responses arrive as notifications on
-`48090001-1a48-11e9-ab14-d663bd873d93`. The MR5 advertises manufacturer ID
-`0x07E0` (2016) with its classic-Bluetooth MAC + protocol version + encryption
-flag as manufacturer data.
-
-See `scripts/edifier_protocol.py` for the full command table and the custom
-EQ curve's byte layout (reverse-engineered and verified live against a real
-unit).
+The daemon exists because reconnecting fresh per-command was unreliable for
+this speaker's BLE peripheral.
 
 ## Uninstall
 
 ```sh
 omarchy plugin remove devis99.edifier-mr5
-```
-
-This removes the plugin itself. The background daemon it spawns keeps running
-independently until it's killed and doesn't get cleaned up by the remove
-command, so stop it too:
-
-```sh
-pkill -f edifier_daemon.py
-```
-
-Optionally, remove its saved config (cached device address, EQ profiles):
-
-```sh
-rm -rf ~/.config/edifier-mr5 ~/.cache/edifier-mr5
+pkill -f edifier_daemon.py   # the daemon isn't stopped by plugin remove
+rm -rf ~/.config/edifier-mr5 ~/.cache/edifier-mr5   # optional: cached config/EQ profiles
 ```
 
 ## License
