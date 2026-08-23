@@ -12,7 +12,7 @@ Android app. Not affiliated with or endorsed by Edifier.
 > differ. Other Edifier "box" products sharing the `lib_connect` protocol may
 > work too (see [Compatibility](#compatibility)) but are untested.
 
-![Main panel (volume, sound mode, 9-band curve editor) next to the Settings panel (Acoustic Tuning: low cutoff frequency/slope, acoustic space, desktop control)](screenshots.png)
+![Main panel (volume, sound mode, 9-band curve editor) next to the Settings panel (Acoustic Tuning: low cutoff frequency/slope, acoustic space, desktop control)](preview.png)
 
 ## Features
 
