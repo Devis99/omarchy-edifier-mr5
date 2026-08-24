@@ -213,19 +213,25 @@ Panel {
               font.bold: true
             }
 
+            // The status line used to be caption-sized in the dimmed
+            // foreground, which made the one thing you open this panel to
+            // check the hardest thing in it to read. The dot carries the
+            // colour coding; the text carries the contrast, since a theme's
+            // accent can sit very close to its own panel background.
             RowLayout {
-              spacing: 5
+              spacing: 6
               Rectangle {
-                width: 7
-                height: 7
-                radius: 3.5
+                width: 8
+                height: 8
+                radius: 4
                 color: root.statusColor
               }
               Text {
                 text: root.statusText()
-                color: root.dim
+                color: edifier.connected ? root.foreground : Color.urgent
                 font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
+                font.pixelSize: Style.font.body
+                font.bold: !edifier.connected
               }
             }
           }
