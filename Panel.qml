@@ -77,6 +77,18 @@ Panel {
     return "—"
   }
 
+  // Reconnect/Rescan/Hard reconnect take up to 25 seconds and, until now, gave
+  // no sign they were running — so the natural response was to press again,
+  // and a second adapter power-cycle on top of the first is exactly what
+  // leaves BLE wedged. The queue coalesces repeats but does not merge into a
+  // command already in flight, so a second press really does run again.
+  readonly property string connectionAction: {
+    if (edifier.pendingCommand === "reconnect") return "Reconnecting…"
+    if (edifier.pendingCommand === "rescan") return "Scanning…"
+    if (edifier.pendingCommand === "hard_reconnect") return "Power-cycling…"
+    return ""
+  }
+
   // Wheel over the bar icon nudges the speaker's own volume — the convention
   // for every volume-shaped widget in the bar, and the thing this widget is
   // for. One device step per notch.
@@ -503,11 +515,13 @@ Panel {
             // ---------- Connection ----------
             SectionCard {
               title: "Connection"
+              headerRight: root.connectionAction
 
               PanelButton {
                 Layout.fillWidth: true
                 text: "Reconnect"
                 bordered: true
+                enabled: root.connectionAction === ""
                 onClicked: edifier.reconnect()
               }
 
@@ -516,6 +530,7 @@ Panel {
                 text: "Rescan"
                 tooltipText: "Forget the saved address and scan for the speaker again"
                 bordered: true
+                enabled: root.connectionAction === ""
                 onClicked: edifier.rescan()
               }
 
@@ -524,6 +539,7 @@ Panel {
                 text: "Hard reconnect"
                 tooltipText: "Power-cycles the Bluetooth adapter — briefly disrupts other Bluetooth devices"
                 bordered: true
+                enabled: root.connectionAction === ""
                 onClicked: edifier.hardReconnect()
               }
             }

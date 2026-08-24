@@ -23,8 +23,12 @@ Item {
   property string eqShareCode: ""
   property string lastError: ""
   property double lastUpdateMs: 0
-  property bool busy: false
   property bool everConnected: false
+
+  // The command currently awaiting a reply, "" when idle. Status polls don't
+  // count: they run every few seconds, so treating them as "busy" would make
+  // anything bound to this flicker constantly.
+  property string pendingCommand: ""
 
   readonly property int refreshIntervalSec: intSetting("refreshIntervalSec", 5, 2, 60)
   readonly property string ctlPath: String(Qt.resolvedUrl("scripts/edifier_ctl.py")).replace("file://", "")
@@ -122,7 +126,7 @@ Item {
     var next = _queue[0]
     _queue = _queue.slice(1)
     _inflight = true
-    busy = true
+    pendingCommand = next.cmd.cmd === "status" ? "" : next.cmd.cmd
     replyTimeout.restart()
     sock.write(JSON.stringify(next.cmd) + "\n")
     sock.flush()
@@ -131,7 +135,7 @@ Item {
   function _onReply(line) {
     replyTimeout.stop()
     _inflight = false
-    busy = false
+    pendingCommand = ""
     applyResult(line)
     _pump()
   }
@@ -256,7 +260,7 @@ Item {
         // Anything mid-flight died with the connection; let the queue retry
         // instead of wedging on an in-flight slot that will never be answered.
         root._inflight = false
-        root.busy = false
+        root.pendingCommand = ""
         if (root._queue.length > 0) root._ensureDaemon()
       }
     }
@@ -289,7 +293,7 @@ Item {
     repeat: false
     onTriggered: {
       root._inflight = false
-      root.busy = false
+      root.pendingCommand = ""
       root.lastError = "Timed out waiting for the daemon"
       root._pump()
     }
