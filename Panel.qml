@@ -217,14 +217,6 @@ Panel {
               }
             }
           }
-
-          PanelActionButton {
-            iconText: "⟳"
-            tooltipText: "Refresh (r)"
-            foreground: root.foreground
-            fontFamily: root.fontFamily
-            onClicked: edifier.refresh()
-          }
         }
 
         PanelSeparator {
