@@ -159,7 +159,10 @@ Panel {
     open: root.opened
     focusTarget: keyCatcher
     contentWidth: panel.fittedContentWidth(edifier.eqMode === 2 ? Style.space(360) : Style.space(340))
-    contentHeight: panel.fittedContentHeight(outer.implicitHeight, Style.space(680))
+    // No height cap: fittedContentHeight already clamps to what the screen
+    // has room for, so a cap on top of it only forced a scroll on panels that
+    // would have fit whole.
+    contentHeight: panel.fittedContentHeight(outer.implicitHeight)
 
     PanelKeyCatcher {
       id: keyCatcher
