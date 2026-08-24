@@ -12,7 +12,10 @@ Android app. Not affiliated with or endorsed by Edifier.
 > differ. Other Edifier "box" products sharing the `lib_connect` protocol may
 > work too (see [Compatibility](#compatibility)) but are untested.
 
-![The whole panel in Custom mode: volume, sound mode, the 9-band curve editor with preset picker, Acoustic Tuning (low cutoff frequency and slope, acoustic space, desktop control), Connection, and the firmware version](preview.png)
+<p align="center">
+  <img src="preview.png" width="440"
+       alt="The whole panel in Custom mode: volume, sound mode, the 9-band curve editor with preset picker, Acoustic Tuning (low cutoff frequency and slope, acoustic space, desktop control), Connection, and the firmware version">
+</p>
 
 ## Features
 
