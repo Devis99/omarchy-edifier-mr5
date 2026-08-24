@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "devis99.edifier-mr5",
   "name": "Edifier MR5",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "author": "andrasd",
   "license": "MIT",
   "description": "Control an Edifier MR5 studio monitor over Bluetooth LE: volume, sound mode, custom EQ, and acoustic tuning, without the phone app. Protocol reverse-engineered from the Edifier ConneX Android app.",

@@ -114,6 +114,14 @@ def friendly_connect_error(e: Exception) -> str:
     return str(e)
 
 
+def _clamp(value, low, high, fallback):
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        return fallback
+    return max(low, min(high, n))
+
+
 class EdifierDaemon:
     def __init__(self):
         self.client: BleakClient | None = None
@@ -317,6 +325,14 @@ class EdifierDaemon:
         slope = low_cutoff_slope if low_cutoff_slope is not None else (self.state.get("low_cutoff_slope") or 0)
         space = acoustic_space if acoustic_space is not None else (self.state.get("acoustic_space") or 0)
         desktop = desktop_control if desktop_control is not None else bool(self.state.get("desktop_control"))
+        # Callers send the full snapshot so coalesced updates stay complete,
+        # which means they also send the "not read yet" sentinel (-1) for any
+        # field the device hasn't reported. build_eq_set masks with & 0xFF, so
+        # an unclamped -1 would write 255 to the speaker's DSP. Clamp here
+        # rather than in each caller: this is the only path to the hardware.
+        freq = _clamp(freq, 20, 100, 20)
+        slope = _clamp(slope, 0, 3, 0)
+        space = _clamp(space, 0, 4, 0)
         payload = build_eq_set(mode, self._eq_index, self._eq_byte0, freq, slope, space, desktop)
         await self._send("eq_set", payload)
         await asyncio.sleep(0.3)
@@ -408,64 +424,17 @@ class EdifierDaemon:
     # ---------- socket server ----------
 
     async def handle_client(self, reader, writer):
+        # One connection carries many commands. The plugin holds a single
+        # socket open for the session instead of spawning a python client per
+        # poll; edifier_ctl.py still works unchanged, it just sends one line
+        # and hangs up, which ends the loop below on the next empty read.
         try:
-            line = await reader.readline()
-            if not line:
-                return
-            req = json.loads(line.decode())
-            cmd = req.get("cmd")
-            if cmd == "status":
-                pass
-            elif cmd == "set_volume":
-                await self.set_volume(req.get("value", 0))
-            elif cmd == "set_eq":
-                await self.set_eq(req.get("mode", 0))
-            elif cmd == "set_acoustic_tuning":
-                await self.set_acoustic_tuning(
-                    low_cutoff_freq=req.get("low_cutoff_freq"),
-                    low_cutoff_slope=req.get("low_cutoff_slope"),
-                    acoustic_space=req.get("acoustic_space"),
-                    desktop_control=req.get("desktop_control"),
-                )
-            elif cmd == "set_custom_eq_band":
-                await self.set_custom_eq_band(req.get("band", 0), req.get("gain", 0))
-            elif cmd == "set_custom_eq_name":
-                await self.set_custom_eq_name(req.get("name", ""))
-            elif cmd == "save_eq_profile":
-                await self.save_eq_profile(req.get("name", ""))
-            elif cmd == "delete_eq_profile":
-                await self.delete_eq_profile(req.get("name", ""))
-            elif cmd == "apply_eq_profile":
-                await self.apply_eq_profile(req.get("name", ""))
-            elif cmd == "export_eq_profile":
-                self.state["eq_share_code"] = self.export_eq_profile(req.get("name", ""))
-            elif cmd == "import_eq_profile":
-                await self.import_eq_profile(req.get("code", ""))
-            elif cmd == "reconnect":
-                if self.client:
-                    try:
-                        await self.client.disconnect()
-                    except Exception:
-                        pass
-                self.client = None
-                self.state["connected"] = False
-                await self.connect_once()
-            elif cmd == "hard_reconnect":
-                await self.hard_reconnect()
-            elif cmd == "rescan":
-                self.address = None
-                await self.discover()
-                await self.connect_once()
-            elif cmd == "shutdown":
-                writer.write((json.dumps({"ok": True}) + "\n").encode())
-                await writer.drain()
-                writer.close()
-                self._stop.set()
-                return
-            resp = dict(self.state)
-            resp["ok"] = True
-            writer.write((json.dumps(resp) + "\n").encode())
-            await writer.drain()
+            while True:
+                line = await reader.readline()
+                if not line:
+                    return
+                if await self._handle_request(line, writer):
+                    return
         except Exception as e:
             log.exception("client error")
             try:
@@ -475,6 +444,63 @@ class EdifierDaemon:
                 pass
         finally:
             writer.close()
+
+    async def _handle_request(self, line, writer) -> bool:
+        """Handle one request line. Returns True if the client should close."""
+        req = json.loads(line.decode())
+        cmd = req.get("cmd")
+        if cmd == "status":
+            pass
+        elif cmd == "set_volume":
+            await self.set_volume(req.get("value", 0))
+        elif cmd == "set_eq":
+            await self.set_eq(req.get("mode", 0))
+        elif cmd == "set_acoustic_tuning":
+            await self.set_acoustic_tuning(
+                low_cutoff_freq=req.get("low_cutoff_freq"),
+                low_cutoff_slope=req.get("low_cutoff_slope"),
+                acoustic_space=req.get("acoustic_space"),
+                desktop_control=req.get("desktop_control"),
+            )
+        elif cmd == "set_custom_eq_band":
+            await self.set_custom_eq_band(req.get("band", 0), req.get("gain", 0))
+        elif cmd == "set_custom_eq_name":
+            await self.set_custom_eq_name(req.get("name", ""))
+        elif cmd == "save_eq_profile":
+            await self.save_eq_profile(req.get("name", ""))
+        elif cmd == "delete_eq_profile":
+            await self.delete_eq_profile(req.get("name", ""))
+        elif cmd == "apply_eq_profile":
+            await self.apply_eq_profile(req.get("name", ""))
+        elif cmd == "export_eq_profile":
+            self.state["eq_share_code"] = self.export_eq_profile(req.get("name", ""))
+        elif cmd == "import_eq_profile":
+            await self.import_eq_profile(req.get("code", ""))
+        elif cmd == "reconnect":
+            if self.client:
+                try:
+                    await self.client.disconnect()
+                except Exception:
+                    pass
+            self.client = None
+            self.state["connected"] = False
+            await self.connect_once()
+        elif cmd == "hard_reconnect":
+            await self.hard_reconnect()
+        elif cmd == "rescan":
+            self.address = None
+            await self.discover()
+            await self.connect_once()
+        elif cmd == "shutdown":
+            writer.write((json.dumps({"ok": True}) + "\n").encode())
+            await writer.drain()
+            self._stop.set()
+            return True
+        resp = dict(self.state)
+        resp["ok"] = True
+        writer.write((json.dumps(resp) + "\n").encode())
+        await writer.drain()
+        return False
 
     async def run(self):
         try:

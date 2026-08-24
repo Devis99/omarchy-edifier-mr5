@@ -12,7 +12,7 @@ Android app. Not affiliated with or endorsed by Edifier.
 > differ. Other Edifier "box" products sharing the `lib_connect` protocol may
 > work too (see [Compatibility](#compatibility)) but are untested.
 
-![Main panel (volume, sound mode, 9-band curve editor) next to the Settings panel (Acoustic Tuning: low cutoff frequency/slope, acoustic space, desktop control)](preview.png)
+![The panel in Custom mode (volume, sound mode, 9-band curve editor, presets) and in Monitor mode (Acoustic Tuning: low cutoff frequency and slope, acoustic space, desktop control)](preview.png)
 
 ## Features
 
@@ -20,9 +20,10 @@ Android app. Not affiliated with or endorsed by Edifier.
 - **Sound Mode** — Monitor / Music / Custom, matching the speaker's LED colors
 - **Custom EQ** — the speaker's 9-band graphic EQ (62 Hz–16 kHz), drag to adjust
 - **Presets** — save/apply curves locally, plus a share-code to hand one to someone else
-- **Acoustic Tuning** (Settings) — low-cutoff filter, room compensation, desktop-control switch
+- **Acoustic Tuning** — low-cutoff filter, room compensation, desktop-control switch
 - **Firmware version display** — informational only, see [Firmware updates](#firmware-updates)
 - A persistent background daemon keeps the BLE connection open, so the panel opens instantly
+- No settings screen — everything the speaker exposes is on one panel
 
 ## Requirements
 
@@ -43,9 +44,15 @@ on the back) for that first scan — no normal OS Bluetooth pairing needed.
 
 ## Usage
 
-Click the speaker icon in the bar. `r` refreshes, `s` opens/saves settings,
-`Esc` closes. Drag any band in Custom mode to adjust the curve; presets and
-the share-code exporter/importer sit below the sliders.
+Click the speaker icon in the bar; `r` refreshes and `Esc` closes. Scroll the
+wheel over the icon to change the speaker's volume without opening anything,
+and middle-click it to refresh in place.
+
+Drag any band in Custom mode to adjust the curve. Presets sit below the
+sliders, and "Share a preset" expands the share-code exporter/importer.
+
+The only setting is the status poll interval, in the shell's own plugin
+settings (or as `refreshIntervalSec` in `~/.config/omarchy/shell.json`).
 
 ## Compatibility
 
@@ -58,8 +65,9 @@ Earbuds/headphones use a different protocol entirely and aren't covered.
 
 ## Known limitations
 
-- **BLE reconnects can be flaky** — "Hard reconnect" in Settings power-cycles
-  the Bluetooth adapter to fix it (briefly disrupts other BT devices).
+- **BLE reconnects can be flaky** — "Hard reconnect" in the Connection card
+  power-cycles the Bluetooth adapter to fix it (briefly disrupts other BT
+  devices).
 - **Input source switching isn't implemented** — value mapping wasn't reliably pinned down.
 - **Firmware updates are not flashable from here, by design** — see below.
 - **No BLE pairing/bonding** (matches Edifier's own protocol) — a spoofed
@@ -75,12 +83,16 @@ path. Use the official ConneX app for firmware updates.
 
 ## How it works
 
-Panel.qml (bar widget) → `edifier_ctl.py` (CLI, Unix socket) →
+Panel.qml (bar widget) → `Service.qml` (one long-lived Unix socket) →
 `edifier_daemon.py` (holds the one BLE connection, auto-reconnects) →
 `edifier_protocol.py` (packet framing + reverse-engineered command set).
 
 The daemon exists because reconnecting fresh per-command was unreliable for
-this speaker's BLE peripheral.
+this speaker's BLE peripheral. `Service.qml` keeps a single socket open for
+the session rather than forking a client per poll; `edifier_ctl.py` is the
+CLI entry point and is what starts the daemon when it isn't running.
+
+`python3 scripts/test_edifier.py` checks the guards on the write path.
 
 ## Uninstall
 
