@@ -252,13 +252,22 @@ class EdifierDaemon:
             else:
                 await asyncio.sleep(1)
 
+    async def _disconnect_client(self):
+        """Drop the BLE link, giving up after 5s. A BlueZ disconnect can hang
+        forever when the adapter is already gone; on shutdown that left the
+        process alive holding the singleton lock with its control socket
+        already removed, so no new daemon could start and the panel stayed
+        dead until reboot."""
+        if not self.client:
+            return
+        try:
+            await asyncio.wait_for(self.client.disconnect(), timeout=5)
+        except Exception:
+            pass
+
     async def hard_reconnect(self):
         log.info("hard reconnect: power-cycling adapter")
-        if self.client:
-            try:
-                await self.client.disconnect()
-            except Exception:
-                pass
+        await self._disconnect_client()
         self.client = None
         self.state["connected"] = False
         proc = await asyncio.create_subprocess_exec(
@@ -477,11 +486,7 @@ class EdifierDaemon:
         elif cmd == "import_eq_profile":
             await self.import_eq_profile(req.get("code", ""))
         elif cmd == "reconnect":
-            if self.client:
-                try:
-                    await self.client.disconnect()
-                except Exception:
-                    pass
+            await self._disconnect_client()
             self.client = None
             self.state["connected"] = False
             await self.connect_once()
@@ -521,11 +526,7 @@ class EdifierDaemon:
             stop_task = asyncio.create_task(self._stop.wait())
             await stop_task
         conn_task.cancel()
-        if self.client:
-            try:
-                await self.client.disconnect()
-            except Exception:
-                pass
+        await self._disconnect_client()
         if SOCKET_PATH.exists():
             SOCKET_PATH.unlink()
         log.info("daemon stopped")
