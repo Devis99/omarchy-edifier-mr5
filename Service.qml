@@ -122,7 +122,7 @@ Item {
   function _pump() {
     if (_inflight) return
     if (_queue.length === 0) return
-    if (!sock.connected) { _ensureDaemon(); return }
+    if (!sock || !sock.connected) { _ensureDaemon(); return }
     var next = _queue[0]
     _queue = _queue.slice(1)
     _inflight = true
@@ -244,24 +244,41 @@ Item {
     runCommand({ cmd: "rescan" })
   }
 
-  Socket {
-    id: sock
-    path: root.socketPath
-    connected: true
+  // Quickshell 0.3.1's Socket is single-use: once a connect attempt fails (the
+  // daemon isn't running yet at shell start) or the connection drops (the
+  // daemon exits when Bluetooth goes away), setting `connected` back to true
+  // does nothing — the object has to be recreated. Toggling the property left
+  // the socket dead for the rest of the session, so every command sat in the
+  // queue forever while status polls still came back through the bootstrap
+  // process: the panel looked connected but nothing the user changed applied.
+  readonly property var sock: sockLoader.item
 
-    parser: SplitParser {
-      onRead: function(line) { root._onReply(line) }
-    }
+  function _reconnect() {
+    sockLoader.active = false
+    sockLoader.active = true
+  }
 
-    onConnectionStateChanged: {
-      if (connected) {
-        root._pump()
-      } else {
-        // Anything mid-flight died with the connection; let the queue retry
-        // instead of wedging on an in-flight slot that will never be answered.
-        root._inflight = false
-        root.pendingCommand = ""
-        if (root._queue.length > 0) root._ensureDaemon()
+  Loader {
+    id: sockLoader
+    active: true
+    sourceComponent: Socket {
+      path: root.socketPath
+      connected: true
+
+      parser: SplitParser {
+        onRead: function(line) { root._onReply(line) }
+      }
+
+      onConnectionStateChanged: {
+        if (connected) {
+          root._pump()
+        } else {
+          // Anything mid-flight died with the connection; let the queue retry
+          // instead of wedging on an in-flight slot that will never be answered.
+          root._inflight = false
+          root.pendingCommand = ""
+          if (root._queue.length > 0) root._ensureDaemon()
+        }
       }
     }
   }
@@ -279,10 +296,7 @@ Item {
       onStreamFinished: root.applyResult(text)
     }
     stderr: StdioCollector { waitForEnd: true }
-    onExited: {
-      sock.connected = false
-      sock.connected = true
-    }
+    onExited: root._reconnect()
   }
 
   // A dropped reply must not wedge the queue forever. hard-reconnect is the
@@ -312,11 +326,8 @@ Item {
   // the socket is genuinely gone.
   Timer {
     interval: 3000
-    running: !sock.connected
+    running: !(sock && sock.connected)
     repeat: true
-    onTriggered: {
-      sock.connected = false
-      sock.connected = true
-    }
+    onTriggered: root._reconnect()
   }
 }
